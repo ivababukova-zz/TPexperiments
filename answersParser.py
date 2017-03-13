@@ -181,7 +181,8 @@ def compareSatvsUnsat(filenames):
     plotname = "SAT vs UNSAT TP instances"
     plotMaker.twoBarsOnce(len(satFiles), len(unsatFiles), ["SAT", "UNSAT"], xlabel, "", plotname)
 
-# aims to generate a cumulative bar with total configs, successful configs, sat and unsat instances
+# generates a cumulative bar with total configs, successful configs, sat and unsat instances
+# todo: add numbers to the plot
 def dataGeneratorStats(filenames, total):
     cpfiles, ipfiles = separateFiles(filenames)
     satFiles, unsatFiles = satVsUnsat(ipfiles)
@@ -195,9 +196,11 @@ def dataGeneratorStats(filenames, total):
         'unsat': [totalUNSAT],
         'sat': [totalSAT]
     }
+
     print(data)
     plotMaker.stackedBar(data)
 
 totalCount = 200 # how many configs were given to the data generator
 filenames = sys.argv[1:]
-dataGeneratorStats(filenames, totalCount)
+compareCPandIP(filenames)
+# dataGeneratorStats(filenames, totalCount)

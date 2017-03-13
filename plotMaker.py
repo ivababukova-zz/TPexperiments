@@ -30,8 +30,8 @@ def parallelCoordinates(cpdata, ipdata):
 def twoHistograms(a, b, x, xlabel, ylabel):
     fig, ax = plt.subplots()
     lw = 1
-    ha = plt.plot(x, a, 'r-', linewidth=lw)
-    hb = plt.plot(x, b, 'b-', linewidth=lw)
+    ha = plt.plot(x, a, 'r', linewidth=lw)
+    hb = plt.plot(x, b, 'b', linewidth=lw)
     ax.set_ylabel(ylabel)
     ax.set_xlabel(xlabel)
     # ax.set_yscale('log')
