@@ -18,7 +18,7 @@ def getMinMaxY(cpdata, ipdata):
     maxYcp = max(cpdata)
     maxYip = max(ipdata)
     maxY = max(maxYcp, maxYip)
-    return [0, maxY + 10] # change 0 with minY if needed
+    return [0, maxY] # change 0 with minY if needed
 
 def parallelCoordinates(cpdata, ipdata):
     fig, ax = plt.subplots()
@@ -29,7 +29,7 @@ def parallelCoordinates(cpdata, ipdata):
 
 def twoHistograms(a, b, x, xlabel, ylabel):
     fig, ax = plt.subplots()
-    lw = 1
+    lw = 2
     ha = plt.plot(x, a, 'r', linewidth=lw)
     hb = plt.plot(x, b, 'b', linewidth=lw)
     ax.set_ylabel(ylabel)
@@ -53,14 +53,30 @@ def histograms(a, b, c, d, x, xlabel, ylabel):
     ax.legend((ha[0], hb[0], hc[0], hd[0]), ('cost', 'duration', 'connections', 'flights'), loc='upper left')
     plt.show()
 
+def twoBoxPlots(data, dvals, xlabel, ylabel, plotname):
+    width = 0.5
+    N = len(data)
+    print(data)
+    ind = np.arange(N)  # the x locations for the groups
+    fig, ax = plt.subplots()
+    ylimits = (0, max(max(item) for item in data)*1.1)
+    bp1 = ax.boxplot(data, 0, 'gD')
+    ax.set_ylim(ylimits)
+    ax.grid(True)
+    ax.set_xticklabels(dvals)
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    ax.set_title(plotname)
+    plt.show()
+
 def twoBars(cpdata, ipdata, dvals, xlabel, ylabel, plotname):
     width = 0.5
     N = len(cpdata)
     ind = np.arange(N)  # the x locations for the groups
 
     fig, ax = plt.subplots()
-    rects1 = ax.bar(ind, cpdata, width, color='r')
-    rects2 = ax.bar(ind + width, ipdata, width, color='b')
+    rects1 = ax.bar(ind, cpdata, width, color='b')
+    rects2 = ax.bar(ind + width, ipdata, width, color='r')
 
     # add some text for labels, title and axes ticks
     ax.set_ylabel(ylabel)
@@ -71,6 +87,7 @@ def twoBars(cpdata, ipdata, dvals, xlabel, ylabel, plotname):
     ylimits = getMinMaxY(cpdata, ipdata)
     ax.set_ylim(ylimits) # sets the start and end points on the y axis
     ax.legend((rects1[0], rects2[0]), ('CP', 'IP'), loc='upper left')
+    ax.grid(True)
 
     def autolabel(rects):
         """
@@ -85,6 +102,125 @@ def twoBars(cpdata, ipdata, dvals, xlabel, ylabel, plotname):
     autolabel(rects1)
     autolabel(rects2)
     plt.show()
+
+def fourBars(data1, data2, data3, data4, dvals, xlabel, ylabel, plotname):
+    width = 0.2
+    N = len(data1)
+    ind = np.arange(N)  # the x locations for the groups
+
+    fig, ax = plt.subplots()
+    rects1 = ax.bar(ind, data1, width, color='b')
+    rects2 = ax.bar(ind + width, data2, width, color='r')
+    rects3 = ax.bar(ind + 2*width, data3, width, color='green')
+    rects4 = ax.bar(ind + 3*width, data4, width, color='orange')
+
+    # add some text for labels, title and axes ticks
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    ax.set_title(plotname)
+    ax.set_xticks(ind + width)
+    ax.set_xticklabels(dvals)
+    d12 = getMinMaxY(data1, data2)
+    d34 = getMinMaxY(data3, data4)
+    ylimits = getMinMaxY(d12, d34)
+    ax.set_ylim(ylimits) # sets the start and end points on the y axis
+    ax.legend((rects1[0], rects2[0], rects3[0], rects4[0]), ('cost', 'flights No', 'duration', 'connections No'), loc='upper left')
+    ax.grid(True)
+
+    plt.show()
+
+def getMinMedMax(data):
+    mini = [item[0] for item in data]
+    medi = [item[1] for item in data]
+    maxi = [item[2] for item in data]
+    return mini,medi,maxi
+
+def oneBarMixed(data, dvals, xlabel, ylabel, plotname, label):
+    N = len(data)
+    ind = np.arange(N)  # the x locations for the groups
+
+    mini,medi,maxi = getMinMedMax(data)
+
+    colors = plt.cm.Blues(np.linspace(0, 0.5, 3))
+
+    fig, ax = plt.subplots()
+    rects1 = plt.bar(ind, mini, color = colors[2])
+    rects2 = plt.bar(ind, medi, color = colors[1], bottom = mini)
+    rects3 = plt.bar(ind, maxi, color = colors[0], bottom = [j+k for j,k in zip(medi,mini)])
+
+    # add some text for labels, title and axes ticks
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    ax.set_title(plotname)
+    ax.set_xticks(ind)
+    ax.set_xticklabels(dvals)
+    ylimits = getMinMaxY(mini, maxi)
+    ax.set_ylim(ylimits) # sets the start and end points on the y axis
+    ax.grid(True)
+
+    def multiAutoLabel(rects1,rects2,rects3):
+        for r1,r2,r3 in zip(rects1,rects2,rects3):
+            h1 = r1.get_height()
+            h2 = r2.get_height()
+            h3 = r3.get_height()
+            notr1 = False
+            notr2 = False
+            notr3 = False
+            # if three of them are too close, show value of h3:
+            if (h3 - h2) <= 20 or h2 == 900:
+                notr2 = True
+            if (h2 - h1) <= 20 or h1 == 900:
+                notr1 = True
+            if h3 == 900:
+                notr3 = True
+            if not notr1:
+                ax.text(r1.get_x() + r1.get_width()/2., 5 + h1,
+                        '%.1f' % h1,
+                        ha='center', va='bottom')
+            if not notr2:
+                ax.text(r1.get_x() + r1.get_width()/2., 5 + h2,
+                        '%.1f' % h2,
+                        ha='center', va='bottom')
+            if not notr3:
+                ax.text(r1.get_x() + r1.get_width()/2., 5 + h3,
+                        '%.1f' % h3,
+                        ha='center', va='bottom')
+
+    multiAutoLabel(rects1,rects2,rects3)
+    plt.show()
+
+
+def oneBar(data, dvals, xlabel, ylabel, plotname, label):
+    width = 0.5
+    N = len(data)
+    ind = np.arange(N)  # the x locations for the groups
+
+    fig, ax = plt.subplots()
+    rects1 = ax.bar(ind, data, color='r')
+
+    # add some text for labels, title and axes ticks
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    ax.set_title(plotname)
+    ax.set_xticks(ind)
+    ax.set_xticklabels(dvals)
+    ylimits = getMinMaxY(data, data)
+    ax.set_ylim(ylimits) # sets the start and end points on the y axis
+    ax.grid(True)
+
+    def autolabel(rects):
+        """
+        Attach a text label above each bar displaying its height
+        """
+        for rect in rects:
+            height = rect.get_height()
+            ax.text(rect.get_x() + rect.get_width()/2., 1.01*height,
+                    '%.1f' % height,
+                    ha='center', va='bottom')
+
+    autolabel(rects1)
+    plt.show()
+
 
 # accepts data in this format:
 #data = {

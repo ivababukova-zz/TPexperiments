@@ -41,7 +41,7 @@ def runningTime(filename):
             line = line.split()
             if len(line) > 0 and line[0] == "Solving:":
                 return float(line[1])
-    return [filename, None]
+    return None
 
 def getInstanceProps(filename):
     instance = filename.split("/")[-1].split("_")[0:4]
@@ -63,13 +63,37 @@ def median(lista):
         returned = lista[int((len(lista) - 1)/2)]
     return returned
 
-# running time per instance, collapsing on opt func
+# running time per instance config, collapsing on opt func
 def runningtimes(allfiles):
     runtimes = []
     instanceTimes = []
     instanceName = ""
     for filename in allfiles:
         currentInstance = getInstanceProps(filename)
+        time = runningTime(filename)
+        if time is not None:
+            if time > 900:
+                time = 900
+            if instanceName == "":
+                instanceName = currentInstance
+            elif instanceName != currentInstance:
+                m = int(instanceName.split("_")[0])
+                n = int(instanceName.split("_")[1])
+                d = int(instanceName.split("_")[2])
+                T = int(instanceName.split("_")[3])
+                runtimes.append([m, n, d, T, instanceName, instanceTimes])
+                instanceTimes = []
+                instanceName = currentInstance
+            instanceTimes.append(time)
+    return runtimes
+
+# running time per instance, collapsing on opt func
+def runningtimesInstance(allfiles):
+    runtimes = []
+    instanceTimes = []
+    instanceName = ""
+    for filename in allfiles:
+        currentInstance = getInstanceName(filename)
         time = runningTime(filename)
         if instanceName == "":
             instanceName = currentInstance
@@ -78,6 +102,7 @@ def runningtimes(allfiles):
             n = int(instanceName.split("_")[1])
             d = int(instanceName.split("_")[2])
             T = int(instanceName.split("_")[3])
+            index = int(instanceName.split("_")[4])
             runtimes.append([m, n, d, T, instanceName, median(instanceTimes)])
             instanceTimes = []
             instanceName = currentInstance
@@ -142,26 +167,31 @@ def compareCPandIP(filenames):
     cpfiles, ipfiles = separateFiles(filenames)
     cpruntimes = runningtimes(cpfiles)
     ipruntimes = runningtimes(ipfiles)
-    pos = 0
+    pos = 2
     cpdata, instanceNames, vals, xlabel = group(cpruntimes, pos)
     ipdata, instanceNames, vals, xlabel = group(ipruntimes, pos)
-    # plotMaker.makePlots(cpdata, ipdata, vals, xlabel)
     ylabel = "Running Times (sec)"
-    plotMaker.twoHistograms(cpdata, ipdata, vals, xlabel, ylabel)
-    # plotname = "Running time of CP and IP models"
+    plotname = "Running time of CP and IP models"
+
+    # plotMaker.oneBarMixed(cpdata,vals,xlabel,ylabel,"Running time of IP model","IP")
+
+    # plotMaker.twoHistograms(cpdata, ipdata, vals, xlabel, ylabel)
+    plotMaker.twoBoxPlots(ipdata, vals, xlabel, ylabel,"The IP model")
+    #plotMaker.oneBar(ipdata,vals,xlabel,ylabel,"Running time of IP model","IP")
+
+    # this plot is ugly:
     # parseForParallelPlot(cpdata, ipdata, instanceNames)
     # plotMaker.parallelCoordinates(cpdata, ipdata)
 
 def compareOptFuncs(filenames):
-    cost,duration,conn,flights = separateOptFuncs(filenames)
+    cpfiles, ipfiles = separateFiles(filenames)
 
+    cost,duration,conn,flights = separateOptFuncs(ipfiles)
     costruntimes = runningtimes(cost)
     durationruntimes = runningtimes(duration)
     connruntimes = runningtimes(conn)
     flightsruntimes = runningtimes(flights)
-
-    pos = 0
-
+    pos = 2
     costdata, instanceNames, vals, xlabel = group(costruntimes, pos)
     durationdata, instanceNames, vals, xlabel = group(durationruntimes, pos)
     conndata, instanceNames, vals, xlabel = group(connruntimes, pos)
@@ -171,7 +201,8 @@ def compareOptFuncs(filenames):
     print(conndata)
     print(flightsdata)
     ylabel = "Running Times (sec)"
-    plotMaker.histograms(costdata,durationdata,conndata,flightsdata,vals, xlabel, ylabel)
+    plotMaker.fourBars(costdata,flightsdata,durationdata,conndata, vals, xlabel,ylabel,"Running time per optimisation function")
+    # plotMaker.histograms(costdata,durationdata,conndata,flightsdata,vals, xlabel, ylabel)
 
 # returns a plot with one bar with number of unsat and one bar with number of sat instances
 def compareSatvsUnsat(filenames):
