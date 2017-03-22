@@ -6,6 +6,34 @@ from operator import itemgetter
 
 pp = pprint.PrettyPrinter(indent=4)
 
+
+# running time per instance, collapsing on opt func
+def runningtimesInstance(allfiles):
+    runtimes = []
+    instanceTimes = []
+    instanceName = ""
+    for filename in allfiles:
+        currentInstance = getInstanceProps(filename)
+        time = runningTime(filename)
+        if instanceName == "":
+            instanceName = currentInstance
+        elif instanceName != currentInstance:
+            m = int(instanceName.split("_")[0])
+            n = int(instanceName.split("_")[1])
+            d = int(instanceName.split("_")[2])
+            T = int(instanceName.split("_")[3])
+            runtimes.append([m, n, d, T, instanceName, median(instanceTimes)])
+            instanceTimes = []
+            instanceName = currentInstance
+        instanceTimes.append(time)
+    if not instanceName == "":
+        m = int(instanceName.split("_")[0])
+        n = int(instanceName.split("_")[1])
+        d = int(instanceName.split("_")[2])
+        T = int(instanceName.split("_")[3])
+        runtimes.append([m, n, d, T, instanceName, median(instanceTimes)])
+    return runtimes
+
 def separateFiles(filenames):
     cpfiles = []
     ipfiles = []
@@ -85,29 +113,40 @@ def runningtimes(allfiles):
                 instanceTimes = []
                 instanceName = currentInstance
             instanceTimes.append(time)
+    if not instanceName == "":
+        m = int(instanceName.split("_")[0])
+        n = int(instanceName.split("_")[1])
+        d = int(instanceName.split("_")[2])
+        T = int(instanceName.split("_")[3])
+        runtimes.append([m, n, d, T, instanceName, instanceTimes])
     return runtimes
 
-# running time per instance, collapsing on opt func
-def runningtimesInstance(allfiles):
-    runtimes = []
-    instanceTimes = []
-    instanceName = ""
-    for filename in allfiles:
-        currentInstance = getInstanceName(filename)
-        time = runningTime(filename)
-        if instanceName == "":
-            instanceName = currentInstance
-        elif instanceName != currentInstance:
-            m = int(instanceName.split("_")[0])
-            n = int(instanceName.split("_")[1])
-            d = int(instanceName.split("_")[2])
-            T = int(instanceName.split("_")[3])
-            index = int(instanceName.split("_")[4])
-            runtimes.append([m, n, d, T, instanceName, median(instanceTimes)])
-            instanceTimes = []
-            instanceName = currentInstance
-        instanceTimes.append(time)
-    return runtimes
+def satUnsatNotsolvedProps(allfiles):
+    stats = []
+    instances = []
+    currentProps = ""
+    for name in allfiles:
+        props = getInstanceProps(name)
+        if currentProps == "":
+            currentProps = props
+        if currentProps != props:
+            sat, unsat, unsolved = satVsUnsat(instances)
+            instances = []
+            m = int(currentProps.split("_")[0])
+            n = int(currentProps.split("_")[1])
+            d = int(currentProps.split("_")[2])
+            T = int(currentProps.split("_")[3])
+            stats.append([m, n, d, T, currentProps, len(sat), len(unsat), len(unsolved)])
+            currentProps = props
+        instances.append(name)
+    sat, unsat, unsolved = satVsUnsat(instances)
+    instances = []
+    m = int(currentProps.split("_")[0])
+    n = int(currentProps.split("_")[1])
+    d = int(currentProps.split("_")[2])
+    T = int(currentProps.split("_")[3])
+    stats.append([m, n, d, T, currentProps, len(sat), len(unsat), len(unsolved)])
+    return(stats)
 
 def parseForParallelPlot(cpdata, ipdata, instanceNames):
     with open("parallel.csv", "w") as f:
@@ -140,23 +179,60 @@ def group(data, pos):
         print("The pos index specified is wrong!!!!")
     return newdata, instanceNames, vals, xlabel
 
+def groupSatUnsatNotsolved(data,pos):
+    sorteddata = sorted(data, key=itemgetter(pos))
+    vals = [val[pos] for val in sorteddata]
+    instanceNames = [val[4] for val in sorteddata]
+
+    sat = [val[5] for val in sorteddata]
+    unsat = [val[6] for val in sorteddata]
+    notsolved = [val[7] for val in sorteddata]
+
+    if pos == 0:
+        xlabel = "Number of Flights"
+    elif pos == 1:
+        xlabel = "Number of Airports"
+    elif pos == 2:
+        xlabel = "Number of Destinations"
+    elif pos == 3:
+        xlabel = "Holiday Time"
+    else:
+        print("The pos index specified is wrong!!!!")
+
+    return sat, unsat, notsolved, instanceNames, vals, xlabel
+
 def satVsUnsat(ipfiles):
     unsatFiles = []
     satFiles = []
+    notsolved = []
+    counter = 0
     for ip in ipfiles:
         sat = False
+        unsat = False
         with open(ip, "r") as f:
+            counter += 1
             for line in f.readlines():
                 line = line.strip().split()
-                props = getInstanceName(ip)
-
                 if len(line) > 0 and line[0] == "Schedule:":
                     sat = True
-                    if len(satFiles) == 0 or satFiles[-1] != props:
-                        satFiles.append(props)
-            if not sat and (len(unsatFiles) == 0 or unsatFiles[-1] != props):
-                unsatFiles.append(props)
-    return satFiles, unsatFiles
+                    # if len(satFiles) == 0 or satFiles[-1] != props:
+                    satFiles.append(ip)
+                elif len(line) > 0 and line[-1] == "IIS":
+                    unsat = True
+                    # if (len(unsatFiles) == 0 or unsatFiles[-1] != props):
+                    unsatFiles.append(ip)
+
+            if not sat and not unsat: #and (len(notsolved) == 0 or notsolved[-1] != props):
+                notsolved.append(ip)
+    return satFiles, unsatFiles, notsolved
+
+def topercent(data,suma):
+    percents = []
+    for v in data:
+        x = (v*100.0)/(suma*1.0)
+        percents.append(x)
+    print(percents)
+    return percents
 
 def countLines(filename):
     with open(filename, "r") as f:
@@ -167,31 +243,26 @@ def compareCPandIP(filenames):
     cpfiles, ipfiles = separateFiles(filenames)
     cpruntimes = runningtimes(cpfiles)
     ipruntimes = runningtimes(ipfiles)
-    pos = 2
+    pos = 0
     cpdata, instanceNames, vals, xlabel = group(cpruntimes, pos)
     ipdata, instanceNames, vals, xlabel = group(ipruntimes, pos)
     ylabel = "Running Times (sec)"
     plotname = "Running time of CP and IP models"
 
     # plotMaker.oneBarMixed(cpdata,vals,xlabel,ylabel,"Running time of IP model","IP")
-
     # plotMaker.twoHistograms(cpdata, ipdata, vals, xlabel, ylabel)
     plotMaker.twoBoxPlots(ipdata, vals, xlabel, ylabel,"The IP model")
     #plotMaker.oneBar(ipdata,vals,xlabel,ylabel,"Running time of IP model","IP")
-
-    # this plot is ugly:
-    # parseForParallelPlot(cpdata, ipdata, instanceNames)
-    # plotMaker.parallelCoordinates(cpdata, ipdata)
 
 def compareOptFuncs(filenames):
     cpfiles, ipfiles = separateFiles(filenames)
 
     cost,duration,conn,flights = separateOptFuncs(ipfiles)
-    costruntimes = runningtimes(cost)
-    durationruntimes = runningtimes(duration)
-    connruntimes = runningtimes(conn)
-    flightsruntimes = runningtimes(flights)
-    pos = 2
+    costruntimes = runningtimesInstance(cost)
+    durationruntimes = runningtimesInstance(duration)
+    connruntimes = runningtimesInstance(conn)
+    flightsruntimes = runningtimesInstance(flights)
+    pos = 0
     costdata, instanceNames, vals, xlabel = group(costruntimes, pos)
     durationdata, instanceNames, vals, xlabel = group(durationruntimes, pos)
     conndata, instanceNames, vals, xlabel = group(connruntimes, pos)
@@ -206,11 +277,41 @@ def compareOptFuncs(filenames):
 
 # returns a plot with one bar with number of unsat and one bar with number of sat instances
 def compareSatvsUnsat(filenames):
-    cpfiles, ipfiles = separateFiles(filenames)
-    satFiles, unsatFiles = satVsUnsat(ipfiles)
+    satFiles, unsatFiles, unsolved = satVsUnsat(filenames)
+
+    print(satFiles)
+    print(unsatFiles)
     xlabel = ""
-    plotname = "SAT vs UNSAT TP instances"
-    plotMaker.twoBarsOnce(len(satFiles), len(unsatFiles), ["SAT", "UNSAT"], xlabel, "", plotname)
+    plotname = "SAT, UNSAT and unsolved TP instances"
+    plotMaker.threeBarsOnce(len(satFiles), len(unsatFiles), len(unsolved), ["SAT", "UNSAT"], xlabel, "", plotname)
+
+def satUnsatRuntimes(filenames):
+    satFiles, unsatFiles, unsolved = satVsUnsat(filenames)
+    satruntimes = runningtimes(satFiles)
+    unsatruntimes = runningtimes(unsatFiles)
+    pos = 3
+    satdata, instanceNames, vals, xlabel = group(satruntimes, pos)
+    unsatdata, instanceNames, vals, xlabel = group(unsatruntimes, pos)
+    ylabel = "Running Times (sec)"
+    plotname = "Running time of soluble TP instances"
+    # plotMaker.oneBarMixed(cpdata,vals,xlabel,ylabel,"Running time of IP model","IP")
+    # plotMaker.twoHistograms(satdata, unsatdata, vals, xlabel, ylabel)
+    plotMaker.twoBoxPlots(satdata, vals, xlabel, ylabel,plotname)
+    # plotMaker.oneBar(unsatdata,vals,xlabel,ylabel,plotname,"SAT")
+
+# for every x files with the same properties, returns number of sat, unsat and not solved instances
+def satUnsatUnsolvedPerProps(filenames):
+    alles = satUnsatNotsolvedProps(filenames)
+    pos = 0
+    ylabel = "Percent of instances"
+    plotname = "Properties of instances for each config"
+    sat, unsat, notsolved, instanceNames, vals, xlabel = groupSatUnsatNotsolved(alles,pos)
+    instancesPerConfig = sat[0] + unsat[0] + notsolved[0]
+    satPercent = topercent(sat,instancesPerConfig)
+    unsatPercent = topercent(unsat,instancesPerConfig)
+    notsolvedPercent = topercent(notsolved,instancesPerConfig)
+    plotMaker.customStackedBar(satPercent,unsatPercent,notsolvedPercent, vals, xlabel,ylabel,plotname)
+
 
 # generates a cumulative bar with total configs, successful configs, sat and unsat instances
 # todo: add numbers to the plot
@@ -233,5 +334,5 @@ def dataGeneratorStats(filenames, total):
 
 totalCount = 200 # how many configs were given to the data generator
 filenames = sys.argv[1:]
-compareCPandIP(filenames)
+satUnsatRuntimes(filenames)
 # dataGeneratorStats(filenames, totalCount)

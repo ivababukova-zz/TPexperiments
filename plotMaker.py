@@ -18,7 +18,7 @@ def getMinMaxY(cpdata, ipdata):
     maxYcp = max(cpdata)
     maxYip = max(ipdata)
     maxY = max(maxYcp, maxYip)
-    return [0, maxY] # change 0 with minY if needed
+    return [0, maxY*1.01] # change 0 with minY if needed
 
 def parallelCoordinates(cpdata, ipdata):
     fig, ax = plt.subplots()
@@ -56,7 +56,6 @@ def histograms(a, b, c, d, x, xlabel, ylabel):
 def twoBoxPlots(data, dvals, xlabel, ylabel, plotname):
     width = 0.5
     N = len(data)
-    print(data)
     ind = np.arange(N)  # the x locations for the groups
     fig, ax = plt.subplots()
     ylimits = (0, max(max(item) for item in data)*1.1)
@@ -129,6 +128,31 @@ def fourBars(data1, data2, data3, data4, dvals, xlabel, ylabel, plotname):
 
     plt.show()
 
+def threeBars(data1, data2, data3, dvals, xlabel, ylabel, plotname):
+    width = 0.3
+    N = len(data2)
+    ind = np.arange(N)
+    print(ind)
+
+    fig, ax = plt.subplots()
+    rects1 = ax.bar(ind, data1, width, color='b')
+    rects2 = ax.bar(ind + width, data2, width, color='r')
+    rects3 = ax.bar(ind + 2*width, data3, width, color='green')
+
+    # add some text for labels, title and axes ticks
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    ax.set_title(plotname)
+    ax.set_xticks(ind + width)
+    ax.set_xticklabels(dvals)
+    d12 = getMinMaxY(data1, data2)
+    ylimits = getMinMaxY(d12, data3)
+    ax.set_ylim(ylimits) # sets the start and end points on the y axis
+    ax.legend((rects1[0], rects2[0], rects3[0]), ('soluble', 'insoluble', 'not solved'), loc='upper left')
+    ax.grid(True)
+
+    plt.show()
+
 def getMinMedMax(data):
     mini = [item[0] for item in data]
     medi = [item[1] for item in data]
@@ -196,7 +220,7 @@ def oneBar(data, dvals, xlabel, ylabel, plotname, label):
     ind = np.arange(N)  # the x locations for the groups
 
     fig, ax = plt.subplots()
-    rects1 = ax.bar(ind, data, color='r')
+    rects1 = ax.bar(ind, data, color='b')
 
     # add some text for labels, title and axes ticks
     ax.set_ylabel(ylabel)
@@ -206,7 +230,6 @@ def oneBar(data, dvals, xlabel, ylabel, plotname, label):
     ax.set_xticklabels(dvals)
     ylimits = getMinMaxY(data, data)
     ax.set_ylim(ylimits) # sets the start and end points on the y axis
-    ax.grid(True)
 
     def autolabel(rects):
         """
@@ -219,6 +242,30 @@ def oneBar(data, dvals, xlabel, ylabel, plotname, label):
                     ha='center', va='bottom')
 
     autolabel(rects1)
+    plt.show()
+
+def customStackedBar(sat,unsat,notsolved, dvals, xlabel, ylabel, plotname):
+    N = len(dvals)
+    ind = np.arange(N)  # the x locations for the groups
+
+    # colors = plt.cm.Blues(np.linspace(0, 0.7, 4))
+    colors = ['#BD0C24', '#0C1FBD', '#088020']
+    fig, ax = plt.subplots()
+    rects1 = plt.bar(ind, sat, color = colors[0])
+    rects2 = plt.bar(ind, unsat, color = colors[1],bottom=sat)
+    rects3 = plt.bar(ind, notsolved, color = colors[2], bottom = [j+k for j,k in zip(sat,unsat)])
+
+    # add some text for labels, title and axes ticks
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    ax.set_title(plotname)
+    ax.set_xticks(ind)
+    ax.set_xticklabels(dvals)
+    max1 = getMinMaxY(sat,unsat)
+    ylimits = getMinMaxY(max1, notsolved)
+    ax.set_ylim(ylimits) # sets the start and end points on the y axis
+    ax.legend((rects1[0], rects2[0], rects3[0]), ('soluble', 'insoluble', 'not solved'), loc = "upper left", bbox_to_anchor=(1, 1))
+    # ax.grid(True)
     plt.show()
 
 
@@ -301,8 +348,8 @@ def stackedBar(raw_data):
 def twoBarsOnce(val1, val2, dvals, xlabel, ylabel, plotname):
     width = 0.5
     fig, ax = plt.subplots()
-    rects1 = ax.bar(0, val1, width, color='r')
-    rects2 = ax.bar(0 + width, val2, width, color='b')
+    rects1 = ax.bar(0, val1, width, color='#BD0C24')
+    rects2 = ax.bar(0.05 + width, val2, width, color='#0C1FBD')
 
     # add some text for labels, title and axes ticks
     ax.set_ylabel(ylabel)
@@ -327,57 +374,35 @@ def twoBarsOnce(val1, val2, dvals, xlabel, ylabel, plotname):
     autolabel(rects2)
     plt.show()
 
-def separateData(data):
-    cpdata = []
-    ipdata = []
-    turn = "cp"
-    for elem in data:
-        elem = elem.strip("\"")
-        if turn == "ip":
-            ipdata.append(int(elem.strip("\"").strip("[,]")))
-        if turn == "cp":
-            cpdata.append(int(elem.strip("\"").strip("[,]")))
-        if elem[-1] == "]":
-            turn = "ip"
-    return cpdata, ipdata
+def threeBarsOnce(val1, val2, val3, dvals, xlabel, ylabel, plotname):
+    width = 0.3
+    fig, ax = plt.subplots()
+    ind = 0.05
+    rects1 = ax.bar(ind, val1, width, color='#BD0C24')
+    rects2 = ax.bar(ind + width, val2, width, color='#0C1FBD')
+    rects3 = ax.bar(ind + 2*width, val3, width, color='#088020')
 
-def makeCustomParallelPlot():
-    cpdata = []
-    ipdata = []
-    with open("parallel.csv", "r") as f:
-        for line in f.readlines():
-            line = line.strip().split(",")
-            if line[-1] == "cp":
-                cpdata.append([float(line[0]),int(line[1]),int(line[2]),int(line[3]),int(line[4])])
-            elif line[-1] == "ip":
-                ipdata.append([float(line[0]),int(line[1]),int(line[2]),int(line[3]),int(line[4])])
+    # add some text for labels, title and axes ticks
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    ax.set_title(plotname)
+    max1 = max(val1,val2)
+    ylimits = (0,max(max1, val3) + 30)
+    ax.set_xticks([])
+    ax.set_ylim(ylimits) # sets the start and end points on the y axis
+    ax.legend((rects1[0], rects2[0], rects3[0]), ('soluble', 'insoluble', 'not solved'), loc = "upper left")
 
-    x=[1,2,3,4,5] # spines
+    def autolabel(rects):
+        """
+        Attach a text label above each bar displaying its height
+        """
+        for rect in rects:
+            height = rect.get_height()
+            ax.text(rect.get_x() + rect.get_width()/2., 1.01*height,
+                    '%.f' % height,
+                    ha='center', va='bottom')
 
-    fig,(ax,ax2,ax3,ax4) = plt.subplots(1, 4, sharey=False)
-
-    for y1, y2 in zip(cpdata,ipdata):
-        # plot the same on all the subplots
-        ax.plot(x,y1,'r-',x,y2,'b-')
-        ax2.plot(x,y1,'r-',x,y2,'b-')
-        ax3.plot(x,y1,'r-',x,y2,'b-')
-        ax4.plot(x,y1,'r-',x,y2,'b-')
-
-    # now zoom in each of the subplots
-    ax.set_xlim([x[0],x[1]])
-    ax2.set_xlim([x[1],x[2]])
-    ax3.set_xlim([x[2],x[3]])
-    ax4.set_xlim([x[3],x[4]])
-
-    # set the x axis ticks
-    for axx,xx in zip([ax,ax2,ax3,ax4],x[:-1]):
-      axx.xaxis.set_major_locator(ticker.FixedLocator([xx]))
-    ax4.xaxis.set_major_locator(ticker.FixedLocator([x[-2],x[-1]]))  # the last one
-
-    # EDIT: add the labels to the rightmost spine
-    for tick in ax4.yaxis.get_major_ticks():
-      tick.label2On=True
-
-    # stack the subplots together
-    plt.subplots_adjust(wspace=0)
+    autolabel(rects1)
+    autolabel(rects2)
+    autolabel(rects3)
     plt.show()
