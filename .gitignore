@@ -1,0 +1,6 @@
+experiments/*
+wrong_experiments/*
+filenames
+iris.data
+*.pyc
+_pycache_/*

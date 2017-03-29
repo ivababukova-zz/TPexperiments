@@ -6,6 +6,69 @@ from operator import itemgetter
 
 pp = pprint.PrettyPrinter(indent=4)
 
+def runningtimesMin(allfiles):
+    runtimes = []
+    instanceTimes = []
+    instanceName = ""
+    for filename in allfiles:
+        currentInstance = getInstanceProps(filename)
+        time = runningTime(filename)
+        if time > 900:
+            time = 900
+        if instanceName == "":
+            instanceName = currentInstance
+        elif instanceName != currentInstance:
+            m = int(instanceName.split("_")[0])
+            n = int(instanceName.split("_")[1])
+            d = int(instanceName.split("_")[2])
+            T = int(instanceName.split("_")[3])
+            runtimes.append([m, n, d, T, instanceName, min(instanceTimes)])
+            instanceTimes = []
+            instanceName = currentInstance
+        if time != None:
+            instanceTimes.append(time)
+    if not instanceName == "":
+        m = int(instanceName.split("_")[0])
+        n = int(instanceName.split("_")[1])
+        d = int(instanceName.split("_")[2])
+        T = int(instanceName.split("_")[3])
+        runtimes.append([m, n, d, T, instanceName, min(instanceTimes)])
+    return runtimes
+
+def runningtimesMax(allfiles):
+    runtimes = []
+    instanceTimes = []
+    instanceName = ""
+    for filename in allfiles:
+        currentInstance = getInstanceProps(filename)
+        time = runningTime(filename)
+        if time > 900:
+            time = 900
+        if instanceName == "":
+            instanceName = currentInstance
+        elif instanceName != currentInstance:
+            m = int(instanceName.split("_")[0])
+            n = int(instanceName.split("_")[1])
+            d = int(instanceName.split("_")[2])
+            T = int(instanceName.split("_")[3])
+            if (d == 4):
+                print("hoooray!")
+                print(instanceTimes, max(instanceTimes))
+            runtimes.append([m, n, d, T, instanceName, max(instanceTimes)])
+            instanceTimes = []
+            instanceName = currentInstance
+        if time != None:
+            instanceTimes.append(time)
+    if not instanceName == "":
+        if (d == 4):
+            print("hoooray!")
+            print(instanceTimes, max(instanceTimes))
+        m = int(instanceName.split("_")[0])
+        n = int(instanceName.split("_")[1])
+        d = int(instanceName.split("_")[2])
+        T = int(instanceName.split("_")[3])
+        runtimes.append([m, n, d, T, instanceName, max(instanceTimes)])
+    return runtimes
 
 # running time per instance, collapsing on opt func
 def runningtimesInstance(allfiles):
@@ -15,6 +78,8 @@ def runningtimesInstance(allfiles):
     for filename in allfiles:
         currentInstance = getInstanceProps(filename)
         time = runningTime(filename)
+        if time > 900:
+            time = 900
         if instanceName == "":
             instanceName = currentInstance
         elif instanceName != currentInstance:
@@ -25,7 +90,8 @@ def runningtimesInstance(allfiles):
             runtimes.append([m, n, d, T, instanceName, median(instanceTimes)])
             instanceTimes = []
             instanceName = currentInstance
-        instanceTimes.append(time)
+        if time != None:
+            instanceTimes.append(time)
     if not instanceName == "":
         m = int(instanceName.split("_")[0])
         n = int(instanceName.split("_")[1])
@@ -209,21 +275,34 @@ def satVsUnsat(ipfiles):
     for ip in ipfiles:
         sat = False
         unsat = False
+        time = runningTime(ip)
         with open(ip, "r") as f:
             counter += 1
             for line in f.readlines():
                 line = line.strip().split()
                 if len(line) > 0 and line[0] == "Schedule:":
                     sat = True
-                    # if len(satFiles) == 0 or satFiles[-1] != props:
-                    satFiles.append(ip)
-                elif len(line) > 0 and line[-1] == "IIS":
+                    if time > 900:
+                        print("not solved ", time, ip)
+                        notsolved.append(ip)
+                    else:
+                        print("sat ", time, ip)
+                        satFiles.append(ip)
+                elif len(line) > 0 and (line[-1] == "IIS" or (line[0] == "No" and line[-1] == "found")):
                     unsat = True
-                    # if (len(unsatFiles) == 0 or unsatFiles[-1] != props):
+                    if time > 900:
+                        print("not solved ", time, ip)
+                        notsolved.append(ip)
+                    else:
+                        print("unsat ", time, ip)
+                        unsatFiles.append(ip)
+            if not sat and not unsat:
+                if time > 900:
+                    print("not solved ", time, ip)
+                    notsolved.append(ip)
+                else:
+                    print("unsat ", time, ip)
                     unsatFiles.append(ip)
-
-            if not sat and not unsat: #and (len(notsolved) == 0 or notsolved[-1] != props):
-                notsolved.append(ip)
     return satFiles, unsatFiles, notsolved
 
 def topercent(data,suma):
@@ -241,17 +320,49 @@ def countLines(filename):
 
 def compareCPandIP(filenames):
     cpfiles, ipfiles = separateFiles(filenames)
-    cpruntimes = runningtimes(cpfiles)
-    ipruntimes = runningtimes(ipfiles)
-    pos = 0
+    cpruntimesmin = runningtimesMin(cpfiles)
+    ipruntimesmin = runningtimesMin(ipfiles)
+
+    cpruntimes = runningtimesInstance(cpfiles)
+    ipruntimes = runningtimesInstance(ipfiles)
+
+    cpruntimesmax = runningtimesMax(cpfiles)
+    ipruntimesmax = runningtimesMax(ipfiles)
+
+    pos = 2
+    cpdatamin, instanceNames, vals, xlabel = group(cpruntimesmin, pos)
+    ipdatamin, instanceNames, vals, xlabel = group(ipruntimesmin, pos)
+
     cpdata, instanceNames, vals, xlabel = group(cpruntimes, pos)
     ipdata, instanceNames, vals, xlabel = group(ipruntimes, pos)
+
+    cpdatamax, instanceNames, vals, xlabel = group(cpruntimesmax, pos)
+    ipdatamax, instanceNames, vals, xlabel = group(ipruntimesmax, pos)
+
     ylabel = "Running Times (sec)"
     plotname = "Running time of CP and IP models"
 
+    print("cpdatamin:")
+    print(cpdatamin)
+    print("cpdatamax:")
+    print(cpdatamax)
+    print("cpdata median:")
+    print(cpdata)
+
+    print("ipdatamin:")
+    print(ipdatamin)
+    print("ipdatamax:")
+    print(ipdatamax)
+    print("ipdata median:")
+    print(ipdata)
+
+
+
+    plotMaker.sixHistograms(cpdatamin, cpdata, cpdatamax, ipdatamin, ipdata, ipdatamax, vals, xlabel, ylabel)
     # plotMaker.oneBarMixed(cpdata,vals,xlabel,ylabel,"Running time of IP model","IP")
+    # plotMaker.twoBars(cpdata, ipdata, vals, xlabel, ylabel, plotname)
     # plotMaker.twoHistograms(cpdata, ipdata, vals, xlabel, ylabel)
-    plotMaker.twoBoxPlots(ipdata, vals, xlabel, ylabel,"The IP model")
+    # plotMaker.twoBoxPlots(cpdata, vals, xlabel, ylabel,"The CP model")
     #plotMaker.oneBar(ipdata,vals,xlabel,ylabel,"Running time of IP model","IP")
 
 def compareOptFuncs(filenames):
@@ -262,22 +373,38 @@ def compareOptFuncs(filenames):
     durationruntimes = runningtimesInstance(duration)
     connruntimes = runningtimesInstance(conn)
     flightsruntimes = runningtimesInstance(flights)
-    pos = 0
+
+    cpcost,cpduration,cpconn,cpflights = separateOptFuncs(cpfiles)
+    cpcostruntimes = runningtimesInstance(cpcost)
+    cpdurationruntimes = runningtimesInstance(cpduration)
+    cpconnruntimes = runningtimesInstance(cpconn)
+    cpflightsruntimes = runningtimesInstance(cpflights)
+
+    pos = 2
     costdata, instanceNames, vals, xlabel = group(costruntimes, pos)
     durationdata, instanceNames, vals, xlabel = group(durationruntimes, pos)
     conndata, instanceNames, vals, xlabel = group(connruntimes, pos)
     flightsdata, instanceNames, vals, xlabel = group(flightsruntimes, pos)
+
+    cpcostdata, instanceNames, vals, xlabel = group(cpcostruntimes, pos)
+    cpdurationdata, instanceNames, vals, xlabel = group(cpdurationruntimes, pos)
+    cpconndata, instanceNames, vals, xlabel = group(cpconnruntimes, pos)
+    cpflightsdata, instanceNames, vals, xlabel = group(cpflightsruntimes, pos)
     print(costdata)
     print(durationdata)
     print(conndata)
     print(flightsdata)
     ylabel = "Running Times (sec)"
-    plotMaker.fourBars(costdata,flightsdata,durationdata,conndata, vals, xlabel,ylabel,"Running time per optimisation function")
+
+    plotMaker.eightHistograms(cpcostdata,cpflightsdata,cpdurationdata,cpconndata,costdata,flightsdata,durationdata,conndata, vals, xlabel, ylabel)
+    # plotMaker.fourBars(costdata,flightsdata,durationdata,conndata, vals, xlabel,ylabel,"Running time per optimisation function")
     # plotMaker.histograms(costdata,durationdata,conndata,flightsdata,vals, xlabel, ylabel)
 
 # returns a plot with one bar with number of unsat and one bar with number of sat instances
-def compareSatvsUnsat(filenames):
-    satFiles, unsatFiles, unsolved = satVsUnsat(filenames)
+def numbofSatandUnsat(filenames):
+    cpfiles, ipfiles = separateFiles(filenames)
+
+    satFiles, unsatFiles, unsolved = satVsUnsat(ipfiles)
 
     print(satFiles)
     print(unsatFiles)
@@ -299,12 +426,72 @@ def satUnsatRuntimes(filenames):
     plotMaker.twoBoxPlots(satdata, vals, xlabel, ylabel,plotname)
     # plotMaker.oneBar(unsatdata,vals,xlabel,ylabel,plotname,"SAT")
 
+def compareSatUnsat(filenames):
+    satFiles, unsatFiles, unsolved = satVsUnsat(filenames)
+
+    satruntimesmin = runningtimesMin(satFiles)
+    unsatruntimesmin = runningtimesMin(unsatFiles)
+
+    satruntimes = runningtimesInstance(satFiles)
+    unsatruntimes = runningtimesInstance(unsatFiles)
+
+    satruntimesmax = runningtimesMax(satFiles)
+    unsatruntimesmax = runningtimesMax(unsatFiles)
+
+    pos = 3
+    satmin, instanceNames, vals, xlabel = group(satruntimesmin, pos)
+    unsatmin, instanceNames, bvals, xlabel = group(unsatruntimesmin, pos)
+
+    sat, instanceNames, vals, xlabel = group(satruntimes, pos)
+    unsat, instanceNames, bvals, xlabel = group(unsatruntimes, pos)
+
+    satmax, instanceNames, vals, xlabel = group(satruntimesmax, pos)
+    unsatmax, instanceNames, bvals, xlabel = group(unsatruntimesmax, pos)
+
+    ylabel = "Running Times (sec)"
+    plotname = "Running time of soluble and insoluble instances for the IP model"
+
+    plotMaker.sixHistogramsSatUnsat(satmin, sat, satmax, unsatmin, unsat, unsatmax, vals, bvals, xlabel, ylabel)
+
+
+def satUnsatCPIP(filenames):
+    cpfiles, ipfiles = separateFiles(filenames)
+
+    satcp, unsatcp, unsolvedcp = satVsUnsat(cpfiles)
+    satip, unsatip, unsolvedip = satVsUnsat(ipfiles)
+
+    pp.pprint(satip)
+    pp.pprint(satcp)
+
+    satcpruntime = runningtimesInstance(satcp)
+    unsatcpruntime = runningtimesInstance(unsatcp)
+
+    satipruntime = runningtimesInstance(satip)
+    unsatipruntime = runningtimesInstance(unsatip)
+
+    ylabel = "Running Times (sec)"
+    pos = 2
+    satcpdata, instanceNames, avals, xlabel = group(satcpruntime, pos)
+    unsatcpdata, instanceNames, bvals, xlabel = group(unsatcpruntime, pos)
+    satipdata, instanceNames, cvals, xlabel = group(satipruntime, pos)
+    unsatipdata, instanceNames, dvals, xlabel = group(unsatipruntime, pos)
+
+    print(satcpdata)
+    print(satipdata)
+    print(unsatcpdata)
+    print(unsatipdata)
+
+    plotMaker.fourHistograms(satcpdata, unsatcpdata, satipdata, unsatipdata, avals, bvals, cvals, dvals, xlabel, ylabel)
+    # plotMaker.twoHistograms(satcpdata, satipdata, vals, xlabel, ylabel)
+
 # for every x files with the same properties, returns number of sat, unsat and not solved instances
 def satUnsatUnsolvedPerProps(filenames):
-    alles = satUnsatNotsolvedProps(filenames)
-    pos = 0
+    cpfiles, ipfiles = separateFiles(filenames)
+
+    alles = satUnsatNotsolvedProps(ipfiles)
+    pos = 1
     ylabel = "Percent of instances"
-    plotname = "Properties of instances for each config"
+    plotname = ""
     sat, unsat, notsolved, instanceNames, vals, xlabel = groupSatUnsatNotsolved(alles,pos)
     instancesPerConfig = sat[0] + unsat[0] + notsolved[0]
     satPercent = topercent(sat,instancesPerConfig)
@@ -313,26 +500,5 @@ def satUnsatUnsolvedPerProps(filenames):
     plotMaker.customStackedBar(satPercent,unsatPercent,notsolvedPercent, vals, xlabel,ylabel,plotname)
 
 
-# generates a cumulative bar with total configs, successful configs, sat and unsat instances
-# todo: add numbers to the plot
-def dataGeneratorStats(filenames, total):
-    cpfiles, ipfiles = separateFiles(filenames)
-    satFiles, unsatFiles = satVsUnsat(ipfiles)
-    totalSAT = len(satFiles)
-    totalUNSAT = len(unsatFiles)
-    garbageCount = total*5 - (totalSAT+totalUNSAT)
-
-    data = {
-        'config_name': ['MonteCarlo'],
-        'garbage': [garbageCount],
-        'unsat': [totalUNSAT],
-        'sat': [totalSAT]
-    }
-
-    print(data)
-    plotMaker.stackedBar(data)
-
-totalCount = 200 # how many configs were given to the data generator
 filenames = sys.argv[1:]
-satUnsatRuntimes(filenames)
-# dataGeneratorStats(filenames, totalCount)
+# compareSatUnsat(filenames)

@@ -39,6 +39,98 @@ def twoHistograms(a, b, x, xlabel, ylabel):
     ax.legend((ha[0], hb[0]), ('CP', 'IP'), loc='upper left')
     plt.show()
 
+def fourHistograms(a, b, c, d, avals, bvals, cvals, dvals, xlabel, ylabel):
+    fig, ax = plt.subplots()
+    lw = 1
+
+    blues = plt.cm.Blues(np.linspace(0, 1, 5))
+    reds = plt.cm.Reds(np.linspace(0, 1, 5))
+    linestyles = ['-']
+    markers = ['o', '*', 'x']
+
+    ha = plt.plot(avals, a, linestyle=linestyles[0], marker=markers[0], color=blues[2], linewidth=lw)
+    hb = plt.plot(bvals, b, linestyle=linestyles[0], marker=markers[1], color=blues[4], linewidth=lw)
+    hc = plt.plot(cvals, c, linestyle=linestyles[0], marker=markers[0], color=reds[2], linewidth=lw)
+    hd = plt.plot(dvals, d, linestyle=linestyles[0], marker=markers[1], color=reds[4], linewidth=lw)
+
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    ax.set_yscale('log')
+    ax.grid(True, which="both")
+    ax.legend((ha[0], hb[0], hc[0], hd[0]), ('CP soluble', 'CP insoluble', 'IP soluble', 'IP insoluble'), loc='upper left', bbox_to_anchor=(1, 1))
+    plt.show()
+
+def sixHistogramsSatUnsat(a, b, c, d, e, f, x, xb, xlabel, ylabel):
+    fig, ax = plt.subplots()
+    lw = 1
+
+    blues = plt.cm.Greens(np.linspace(0, 1, 5))
+    reds = plt.cm.Oranges(np.linspace(0, 1, 5))
+    linestyles = ['None', '-']
+    markers = ['o', '*', 'x']
+
+    ha = plt.plot(x, a, linestyle=linestyles[0], marker=markers[0], color=blues[2], linewidth=lw)
+    hb = plt.plot(x, b, linestyle=linestyles[1], marker=markers[1], color=blues[3], linewidth=lw)
+    hc = plt.plot(x, c, linestyle=linestyles[0], marker=markers[2], color=blues[4], linewidth=lw)
+    hd = plt.plot(xb, d, linestyle=linestyles[0], marker=markers[0], color=reds[2], linewidth=lw)
+    he = plt.plot(xb, e, linestyle=linestyles[1], marker=markers[1], color=reds[3], linewidth=lw)
+    hf = plt.plot(xb, f, linestyle=linestyles[0], marker=markers[2], color=reds[4], linewidth=lw)
+
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    ax.set_yscale('log')
+    ax.grid(True)
+    ax.legend((ha[0], hb[0], hc[0], hd[0], he[0], hf[0]), ('soluble min', 'soluble median', 'soluble max', 'insoluble min', 'insoluble median', 'insoluble max'), loc='upper left', bbox_to_anchor=(1, 1))
+    plt.show()
+
+def sixHistograms(a, b, c, d, e, f, x, xlabel, ylabel):
+    fig, ax = plt.subplots()
+    lw = 1
+
+    blues = plt.cm.Blues(np.linspace(0, 1, 5))
+    reds = plt.cm.Reds(np.linspace(0, 1, 5))
+    linestyles = ['None', '-']
+    markers = ['o', '', 'o']
+
+    ha = plt.plot(x, a, linestyle=linestyles[0], marker=markers[0], color=blues[2], linewidth=lw)
+    hb = plt.plot(x, b, linestyle=linestyles[1], marker=markers[1], color=blues[3], linewidth=lw)
+    hc = plt.plot(x, c, linestyle=linestyles[0], marker=markers[2], color=blues[4], linewidth=lw)
+    hd = plt.plot(x, d, linestyle=linestyles[0], marker=markers[0], color=reds[2], linewidth=lw)
+    he = plt.plot(x, e, linestyle=linestyles[1], marker=markers[1], color=reds[3], linewidth=lw)
+    hf = plt.plot(x, f, linestyle=linestyles[0], marker=markers[2], color=reds[4], linewidth=lw)
+
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    ax.set_yscale('log')
+    ax.grid(True)
+    ax.legend((ha[0], hb[0], hc[0], hd[0], he[0], hf[0]), ('CP min', 'CP median', 'CP max', 'IP min', 'IP median', 'IP max'), loc='upper left', bbox_to_anchor=(1, 1))
+    plt.show()
+
+def eightHistograms(a, b, c, d, e, f, g, h, x, xlabel, ylabel):
+    fig, ax = plt.subplots()
+    lw = 1
+
+    blues = plt.cm.Blues(np.linspace(0, 1, 6))
+    reds = plt.cm.Reds(np.linspace(0, 1, 6))
+    linestyles = ['-', 'None']
+    markers = ['o', '*', 'v', 'x']
+
+    ha = plt.plot(x, a, linestyle=linestyles[1], marker=markers[0], color=blues[2], linewidth=lw)
+    hb = plt.plot(x, b, linestyle=linestyles[1], marker=markers[1], color=blues[3], linewidth=lw)
+    hc = plt.plot(x, c, linestyle=linestyles[1], marker=markers[2], color=blues[4], linewidth=lw)
+    hd = plt.plot(x, d, linestyle=linestyles[1], marker=markers[3], color=blues[5], linewidth=lw)
+    he = plt.plot(x, e, linestyle=linestyles[1], marker=markers[0], color=reds[2], linewidth=lw)
+    hf = plt.plot(x, f, linestyle=linestyles[1], marker=markers[1], color=reds[3], linewidth=lw)
+    hg = plt.plot(x, g, linestyle=linestyles[1], marker=markers[2], color=reds[4], linewidth=lw)
+    hh = plt.plot(x, h, linestyle=linestyles[1], marker=markers[3], color=reds[5], linewidth=lw)
+
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    ax.set_yscale('log')
+    ax.grid(True)
+    ax.legend((ha[0], hb[0], hc[0], hd[0], he[0], hf[0], hg[0], hh[0]), ('CP cost', 'CP flights', 'CP trip duration', 'CP connecting flights', 'IP cost', 'IP flights', 'IP trip duration', 'IP connecting flights'), loc='upper left', bbox_to_anchor=(1, 1))
+    plt.show()
+
 def histograms(a, b, c, d, x, xlabel, ylabel):
     fig, ax = plt.subplots()
     lw = 1
